@@ -1,0 +1,56 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=10
+USE_PROCD=1
+
+DIR=/sbin
+PROG=meshconfig
+
+error(){
+	echo "${initscript}:" "$@" 1>&2
+}
+
+xappend() {
+	local filename="$1"
+	local value="$2"
+	echo "${value#--}" >> "$filename"
+}
+
+section_enabled(){
+	config_get_bool enabled "$1" 'enabled' 0
+	[ $enabled -gt 0 ]
+}
+
+start_service_daemon(){
+	local s="$1"
+
+	section_enabled "$s" || return 1
+
+	uci commit meshconfig
+	
+	procd_open_instance
+	procd_set_param command "$DIR/$PROG"
+	procd_set_param respawn ${respawn_threshold:-360} ${respawn_timeout:-5} ${respawn_retry:-0}
+	procd_close_instance
+}
+
+start_service(){
+	config_load 'meshconfig'
+	config_foreach start_service_daemon 'meshconfig'
+}
+
+service_triggers()
+{
+        procd_add_reload_trigger "meshconfig"
+}
+
+stop(){
+	service_stop $DIR/$PROG
+}
+
+reload_service() {
+	service_stop $DIR/$PROG
+	config_load 'meshconfig'
+	config_foreach start_service_daemon 'meshconfig'
+}
