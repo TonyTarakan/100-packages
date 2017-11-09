@@ -1,0 +1,3 @@
+[submodule "utils/as100vpn/src"]
+	path = utils/as100vpn/src
+	url = git@sdcroot:as100-vpn
