@@ -13,6 +13,7 @@ define Package/as100vpn
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=VPN client for AS100 system
+  DEPENDS:=+libopenssl
 endef
 
 TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
