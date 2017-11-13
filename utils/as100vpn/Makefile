@@ -5,8 +5,6 @@ PKG_VERSION:=0
 PKG_RELEASE:=1
 PKG_BUILD_DIR:=$(BUILD_DIR)/as100vpn
 
-PKG_MAINTAINER:=Vladimir Ovseychuk <vgovseychuk@gmail.com>
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/as100vpn

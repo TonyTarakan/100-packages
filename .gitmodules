@@ -1,3 +1,6 @@
 [submodule "utils/as100vpn/src"]
 	path = utils/as100vpn/src
 	url = git@sdcroot:as100-vpn
+[submodule "utils/as100meshmonitor/src"]
+	path = utils/as100meshmonitor/src
+	url = git@sdcroot:as100-meshmonitor
