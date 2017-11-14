@@ -22,7 +22,7 @@ endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/meshmonitor/* $(PKG_BUILD_DIR)/
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
 define Build/Compile
@@ -31,7 +31,7 @@ endef
 
 define Package/as100meshmonitor/install
 	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/vpn_client $(1)/sbin/as100meshmonitor
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/meshmonitor $(1)/sbin/as100meshmonitor
 endef
 
 $(eval $(call BuildPackage,as100meshmonitor))
