@@ -22,7 +22,8 @@ endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/meshmonitor/* $(PKG_BUILD_DIR)/
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
+	ln -s ./src/meshmonitor/Makefile $(PKG_BUILD_DIR)/Makefile
 endef
 
 define Package/as100meshmonitor/install
