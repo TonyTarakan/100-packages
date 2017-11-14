@@ -25,10 +25,6 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
-define Build/Compile
-	$(call Build/Compile/Default,client)
-endef
-
 define Package/as100meshmonitor/install
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/meshmonitor $(1)/sbin/as100meshmonitor
