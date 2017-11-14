@@ -4,3 +4,6 @@
 [submodule "utils/as100meshmonitor/src"]
 	path = utils/as100meshmonitor/src
 	url = git@sdcroot:as100-meshmonitor
+[submodule "utils/esptool/src"]
+	path = utils/esptool/src
+	url = ../../ilyakorostelev/esptool-ck
