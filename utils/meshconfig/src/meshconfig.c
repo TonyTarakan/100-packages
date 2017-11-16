@@ -7,7 +7,7 @@ static int read_config_from_esp(esp_config_t * esp_config)
     int conf_dev, i;
     ssize_t size;
     uint8_t read_cmd[] = { 0x54, 0x02, 0x00, 0x00 };
-
+printf("read_config_from_esp\n")
     conf_dev = open(ESP_CONFIG_DEV_PATH, O_RDWR);
     if(conf_dev < 0)
     {
@@ -43,7 +43,7 @@ static int write_config_to_esp(esp_config_t * esp_config)
     int conf_dev, res;
     uint8_t write_cmd[] = { 0x54, 0x01, 0x00, 0x00 };
     uint8_t write_buf[sizeof(esp_config_t) + sizeof(write_cmd)];
-
+printf("write_config_to_esp\n")
     conf_dev = open(ESP_CONFIG_DEV_PATH, O_RDWR);
     if(conf_dev < 0)
     {
@@ -379,6 +379,7 @@ int main(int argc, char **argv)
 
             ret = write_config_to_esp(&new_espconfig);
             sleep(5);
+printf("restart_esp\n");
             ret = cmd_esp("on");   //restart_esp
             sleep(8);
             continue;
