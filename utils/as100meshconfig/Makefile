@@ -30,11 +30,11 @@ endef
 
 define Package/as100meshconfig/install
 	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/meshconfig $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/meshconfig $(1)/sbin/as100meshconfig
 	$(INSTALL_DIR) $(1)/etc/config
 	$(CP) ./files/meshconfig.config $(1)/etc/config/meshconfig
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/meshconfig.init $(1)/etc/init.d/meshconfig
+	#$(INSTALL_DIR) $(1)/etc/init.d
+	#$(INSTALL_BIN) ./files/meshconfig.init $(1)/etc/init.d/meshconfig
 
 endef
 
