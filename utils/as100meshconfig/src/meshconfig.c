@@ -155,6 +155,8 @@ static int get_config_from_file(char *filename, esp_config_t * esp_config_ret)
     memset(&esp_config, '\0', sizeof(esp_config_t));
     int j,k,tmp;
 
+
+    /////////// SOFTAP BLOCK ///////////
     if ((p = get_uci_value("meshconfig.softap.ssid")) == NULL)
     {
         printf("Error at meshconfig.softap.ssid\n");
@@ -200,19 +202,9 @@ static int get_config_from_file(char *filename, esp_config_t * esp_config_ret)
     }
     esp_config.ap_config.ssid_hidden = atoi(p);
 
-    if ((p = get_uci_value("meshconfig.softap.max_conn")) == NULL)
-    {
-        printf("Error at meshconfig.softap.max_conn\n");
-        return -EFAULT;
-    }
-    esp_config.ap_config.max_connection = atoi(p);
-
-    if ((p = get_uci_value("meshconfig.softap.beacon_interval")) == NULL)
-    {
-        printf("Error at meshconfig.softap.beacon_interval\n");
-        return -EFAULT;
-    }
-    esp_config.ap_config.beacon_interval = atoi(p);
+    esp_config.ap_config.max_connection = 2;
+    esp_config.ap_config.beacon_interval = 100;
+    esp_config.ap_flags = 0;
 
     // TODO: WE MUST CHECK WRONG CONFIG!!!
     if ((p = get_uci_value("meshconfig.softap.mac")) == NULL)
@@ -234,15 +226,9 @@ static int get_config_from_file(char *filename, esp_config_t * esp_config_ret)
         esp_config.ap_mac.address[5]
         );
 
-    if ((p = get_uci_value("meshconfig.softap.flags")) == NULL)
-    {
-        printf("Error at meshconfig.softap.flags\n");
-        return -EFAULT;
-    }
-    esp_config.ap_flags = atoi(p);
 
 
-    // STATION
+    /////////// STATION BLOCK ///////////
     if ((p = get_uci_value("meshconfig.station.ssid")) == NULL)
     {
         printf("Error at meshconfig.station.ssid\n");
@@ -296,6 +282,41 @@ static int get_config_from_file(char *filename, esp_config_t * esp_config_ret)
     }
     esp_config.sta_flags = atoi(p);
 
+
+
+    /////////// IP BLOCK ///////////
+    if ((p = get_uci_value("meshconfig.ip.ipaddr")) == NULL)
+    {
+        printf("Error at meshconfig.ip.ipaddr\n");
+        return -EFAULT;
+    }
+    inet_pton(AF_INET, p, &(esp_config.ip_info.ip));
+
+    if ((p = get_uci_value("meshconfig.ip.ipmask")) == NULL)
+    {
+        printf("Error at meshconfig.ip.ipmask\n");
+        return -EFAULT;
+    }
+    inet_pton(AF_INET, p, &(esp_config.ip_info.netmask));
+
+    if ((p = get_uci_value("meshconfig.ip.")) == NULL)
+    {
+        printf("Error at meshconfig.ip.gateway\n");
+        return -EFAULT;
+    }
+    inet_pton(AF_INET, p, &(esp_config.ip_info.gw));
+
+
+    /////////// CRYPTO BLOCK ///////////
+    if ((p = get_uci_value("meshconfig.crypto.keylen")) == NULL)
+    {
+        printf("Error at meshconfig.crypto.keylen\n");
+        return -EFAULT;
+    }
+    esp_config.mesh_key_len = atoi(p);
+
+
+    /////////// CHECKSUM ///////////
     esp_config.crc32 = 0;
     esp_config.crc32 = crc32(&esp_config, sizeof(esp_config_t));
 

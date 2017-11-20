@@ -80,14 +80,27 @@ typedef struct {
 	uint16_t beacon_interval;	// Note: support 100 ~ 60000 ms, default 100
 } softap_config_t;
 
+typedef struct {
+	uint32_t addr;
+}ip_addr_t;
+
+typedef struct {
+	ip_addr_t ip;
+	ip_addr_t netmask;
+	ip_addr_t gw;
+}ip_info_t;
+
 #pragma pack(push, 1)
 typedef struct {
 	uint32_t crc32;
+	ip_info_t ip_info;
 	softap_config_t ap_config;
 	station_config_t sta_config;
 	esp_mac_t ap_mac;
 	esp_mac_t sta_mac;
 	uint16_t ap_flags;
 	uint16_t sta_flags;
+	uint32_t mesh_key_len;
+	uint8_t mesh_key[MESH_KEY_MAX_LEN];
 } esp_config_t;
 #pragma pack(pop)
