@@ -41,6 +41,7 @@
 
 #define SSID_MAX_LEN			32
 #define PASS_MAX_LEN			64
+#define MESH_KEY_MAX_LEN		16
 
 typedef struct 
 {

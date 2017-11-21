@@ -19,6 +19,7 @@ static int read_config_from_esp(esp_config_t * esp_config)
     i = 0;
     while(1)
     {
+        memset(esp_config, '\0', sizeof(esp_config_t));
         size = read(conf_dev, esp_config, sizeof(esp_config_t));
 
         if(size == sizeof(esp_config_t)) break;
@@ -29,7 +30,7 @@ static int read_config_from_esp(esp_config_t * esp_config)
 
         if(i > ESP_CONFIG_READ_RETRIES)
         {
-            printf("Reading config from ESP failed. Retries %d\n", i);
+            printf("Reading config from ESP failed. Retries %d\n", i-1);
             return -ETIME;
         }
     }
@@ -117,7 +118,17 @@ static void print_config(esp_config_t * esp_config)
         esp_config->sta_mac.address[3], 
         esp_config->sta_mac.address[4], 
         esp_config->sta_mac.address[5]);
-    printf("station_flags = 0x%04x\n", esp_config->sta_flags);
+    printf("station_flags = 0x%04x\n\n", esp_config->sta_flags);
+
+    printf("ip_info_ip = %d\n", esp_config->ip_info.ip.addr);
+    printf("ip_info_netmask = %d\n", esp_config->ip_info.netmask.addr);
+    printf("ip_info_gw = %d\n\n", esp_config->ip_info.gw.addr);
+
+    printf("mesh_key_len = %d\n", esp_config->mesh_key_len);
+    printf("mesh_key = \n");
+    for(int i = 0; i < MESH_KEY_MAX_LEN; i++)
+        printf("%02x ", esp_config->mesh_key[i]);
+    printf("\n");
 }
 
 char *get_uci_value(char *uci_path)
@@ -162,14 +173,15 @@ static int get_config_from_file(char *filename, esp_config_t * esp_config_ret)
         printf("Error at meshconfig.softap.ssid\n");
         return -EFAULT;
     }
-    memcpy(&(esp_config.ap_config.ssid), p, sizeof(esp_config.ap_config.ssid));
+    memcpy(&(esp_config.ap_config.ssid), p, strlen(p));
+    esp_config.ap_config.ssid_len = strlen(p);
 
     if ((p = get_uci_value("meshconfig.softap.password")) == NULL)
     {
         printf("Error at meshconfig.softap.password\n");
         return -EFAULT;
     }
-    memcpy(&(esp_config.ap_config.password), p, sizeof(esp_config.ap_config.password));
+    memcpy(&(esp_config.ap_config.password), p, strlen(p));
 
     if ((p = get_uci_value("meshconfig.softap.channel")) == NULL)
     {
@@ -206,26 +218,12 @@ static int get_config_from_file(char *filename, esp_config_t * esp_config_ret)
     esp_config.ap_config.beacon_interval = 100;
     esp_config.ap_flags = 0;
 
-    // TODO: WE MUST CHECK WRONG CONFIG!!!
-    if ((p = get_uci_value("meshconfig.softap.mac")) == NULL)
-    {
-        printf("Error at meshconfig.softap.mac\n");
-        return -EFAULT;
-    }
-    esp_config.ap_mac.address[0] = (uint8_t)strtol(p,    NULL, 16);
-    esp_config.ap_mac.address[1] = (uint8_t)strtol(p+3,  NULL, 16); 
-    esp_config.ap_mac.address[2] = (uint8_t)strtol(p+6,  NULL, 16); 
-    esp_config.ap_mac.address[3] = (uint8_t)strtol(p+9,  NULL, 16); 
-    esp_config.ap_mac.address[4] = (uint8_t)strtol(p+12, NULL, 16); 
-    esp_config.ap_mac.address[5] = (uint8_t)strtol(p+15, NULL, 16); 
-    printf("ap_mac = %02x:%02x:%02x:%02x:%02x:%02x \n", esp_config.ap_mac.address[0],
-        esp_config.ap_mac.address[1],
-        esp_config.ap_mac.address[2],
-        esp_config.ap_mac.address[3],
-        esp_config.ap_mac.address[4],
-        esp_config.ap_mac.address[5]
-        );
-
+    esp_config.ap_mac.address[0] = 0x00;
+    esp_config.ap_mac.address[1] = 0x00; 
+    esp_config.ap_mac.address[2] = 0x00; 
+    esp_config.ap_mac.address[3] = 0x01; 
+    esp_config.ap_mac.address[4] = 0x02; 
+    esp_config.ap_mac.address[5] = 0x03; 
 
 
     /////////// STATION BLOCK ///////////
@@ -234,50 +232,35 @@ static int get_config_from_file(char *filename, esp_config_t * esp_config_ret)
         printf("Error at meshconfig.station.ssid\n");
         return -EFAULT;
     }
-    memcpy(&(esp_config.sta_config.ssid), p, sizeof(esp_config.sta_config.ssid));
+    memcpy(&(esp_config.sta_config.ssid), p, strlen(p));
 
     if ((p = get_uci_value("meshconfig.station.password")) == NULL)
     {
         printf("Error at meshconfig.station.password\n");
         return -EFAULT;
     }
-    memcpy(&(esp_config.sta_config.password), p, sizeof(esp_config.sta_config.password));
+    memcpy(&(esp_config.sta_config.password), p, strlen(p));
 
-    if ((p = get_uci_value("meshconfig.station.bssid_set")) == NULL)
-    {
-        printf("Error at meshconfig.station.bssid_set\n");
-        return -EFAULT;
-    }
-    esp_config.sta_config.bssid_set = atoi(p);
 
-    if ((p = get_uci_value("meshconfig.station.bssid")) == NULL)
-    {
-        printf("Error at meshconfig.station.bssid\n");
-        return -EFAULT;
-    }
-    esp_config.sta_config.bssid[0] = (uint8_t)strtol(p,    NULL, 16);
-    esp_config.sta_config.bssid[1] = (uint8_t)strtol(p+3,  NULL, 16); 
-    esp_config.sta_config.bssid[2] = (uint8_t)strtol(p+6,  NULL, 16); 
-    esp_config.sta_config.bssid[3] = (uint8_t)strtol(p+9,  NULL, 16); 
-    esp_config.sta_config.bssid[4] = (uint8_t)strtol(p+12, NULL, 16); 
-    esp_config.sta_config.bssid[5] = (uint8_t)strtol(p+15, NULL, 16);
+    esp_config.sta_config.bssid_set = 0;
 
-    // TODO: WE MUST CHECK WRONG CONFIG!!!
-    if ((p = get_uci_value("meshconfig.station.mac")) == NULL)
-    {
-        printf("Error at meshconfig.station.mac\n");
-        return -EFAULT;
-    }
-    esp_config.sta_mac.address[0] = (uint8_t)strtol(p,    NULL, 16);
-    esp_config.sta_mac.address[1] = (uint8_t)strtol(p+3,  NULL, 16); 
-    esp_config.sta_mac.address[2] = (uint8_t)strtol(p+6,  NULL, 16); 
-    esp_config.sta_mac.address[3] = (uint8_t)strtol(p+9,  NULL, 16); 
-    esp_config.sta_mac.address[4] = (uint8_t)strtol(p+12, NULL, 16); 
-    esp_config.sta_mac.address[5] = (uint8_t)strtol(p+15, NULL, 16);
+    esp_config.sta_config.bssid[0] = 0;
+    esp_config.sta_config.bssid[1] = 0; 
+    esp_config.sta_config.bssid[2] = 0; 
+    esp_config.sta_config.bssid[3] = 0; 
+    esp_config.sta_config.bssid[4] = 0; 
+    esp_config.sta_config.bssid[5] = 0;
 
-    if ((p = get_uci_value("meshconfig.station.flags")) == NULL)
+    esp_config.sta_mac.address[0] = 0x00;
+    esp_config.sta_mac.address[1] = 0x00; 
+    esp_config.sta_mac.address[2] = 0x00; 
+    esp_config.sta_mac.address[3] = 0x11; 
+    esp_config.sta_mac.address[4] = 0x22; 
+    esp_config.sta_mac.address[5] = 0x33;
+
+    if ((p = get_uci_value("meshconfig.station.enabled")) == NULL)
     {
-        printf("Error at meshconfig.station.flags\n");
+        printf("Error at meshconfig.station.enabled\n");
         return -EFAULT;
     }
     esp_config.sta_flags = atoi(p);
@@ -299,7 +282,7 @@ static int get_config_from_file(char *filename, esp_config_t * esp_config_ret)
     }
     inet_pton(AF_INET, p, &(esp_config.ip_info.netmask));
 
-    if ((p = get_uci_value("meshconfig.ip.")) == NULL)
+    if ((p = get_uci_value("meshconfig.ip.gateway")) == NULL)
     {
         printf("Error at meshconfig.ip.gateway\n");
         return -EFAULT;
@@ -314,6 +297,7 @@ static int get_config_from_file(char *filename, esp_config_t * esp_config_ret)
         return -EFAULT;
     }
     esp_config.mesh_key_len = atoi(p);
+    memset(esp_config.mesh_key, '\0', sizeof(esp_config.mesh_key));
 
 
     /////////// CHECKSUM ///////////
