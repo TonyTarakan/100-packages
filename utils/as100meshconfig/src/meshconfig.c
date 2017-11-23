@@ -120,13 +120,26 @@ static void print_config(esp_config_t * esp_config)
         esp_config->sta_mac.address[5]);
     printf("station_flags = 0x%04x\n\n", esp_config->sta_flags);
 
-    printf("ip_info_ip = %d\n", esp_config->ip_info.ip.addr);
-    printf("ip_info_netmask = %d\n", esp_config->ip_info.netmask.addr);
-    printf("ip_info_gw = %d\n\n", esp_config->ip_info.gw.addr);
+    printf("ip_info_ip = %d.%d.%d.%d\n", 
+        esp_config->ip_info.ip.addr & 0xFF,
+        (esp_config->ip_info.ip.addr >> 8) & 0xFF,
+        (esp_config->ip_info.ip.addr >> 16) & 0xFF,
+        (esp_config->ip_info.ip.addr >> 24) & 0xFF);
+    printf("ip_info_netmask = %d.%d.%d.%d\n", 
+        esp_config->ip_info.netmask.addr & 0xFF,
+        (esp_config->ip_info.netmask.addr >> 8) & 0xFF,
+        (esp_config->ip_info.netmask.addr >> 16) & 0xFF,
+        (esp_config->ip_info.netmask.addr >> 24) & 0xFF);
+    printf("ip_info_gw = %d.%d.%d.%d\n", 
+        esp_config->ip_info.gw.addr & 0xFF,
+        (esp_config->ip_info.gw.addr >> 8) & 0xFF,
+        (esp_config->ip_info.gw.addr >> 16) & 0xFF,
+        (esp_config->ip_info.gw.addr >> 24) & 0xFF);
 
+    printf("\n");
     printf("mesh_key_len = %d\n", esp_config->mesh_key_len);
-    printf("mesh_key = \n");
-    for(int i = 0; i < MESH_KEY_MAX_LEN; i++)
+    printf("mesh_key = ");
+    for(int i = 0; i < esp_config->mesh_key_len; i++)
         printf("%02x ", esp_config->mesh_key[i]);
     printf("\n");
 }
@@ -161,10 +174,11 @@ char *get_uci_value(char *uci_path)
 
 static int get_config_from_file(char *filename, esp_config_t * esp_config_ret) 
 {
-    char * p, path[128];
+    char * p, path[20];
     esp_config_t esp_config;
     memset(&esp_config, '\0', sizeof(esp_config_t));
     int j,k,tmp;
+    FILE *fp;
 
 
     /////////// SOFTAP BLOCK ///////////
@@ -218,13 +232,23 @@ static int get_config_from_file(char *filename, esp_config_t * esp_config_ret)
     esp_config.ap_config.beacon_interval = 100;
     esp_config.ap_flags = 0;
 
-    esp_config.ap_mac.address[0] = 0x00;
-    esp_config.ap_mac.address[1] = 0x00; 
-    esp_config.ap_mac.address[2] = 0x00; 
-    esp_config.ap_mac.address[3] = 0x01; 
-    esp_config.ap_mac.address[4] = 0x02; 
-    esp_config.ap_mac.address[5] = 0x03; 
+    esp_config.ap_mac.address[0] = 0x62;
+    esp_config.ap_mac.address[1] = 0x01; 
+    esp_config.ap_mac.address[2] = 0x94;
 
+    /// read SN
+    fp = popen("/sbin/getdevicesn", "r");
+    if (fp == NULL) {
+        printf("Failed to run command getdevicesn\n" );
+        return -EFAULT;
+    }
+    fgets(path, 3, fp);
+    esp_config.ap_mac.address[3] = strtol(path, NULL, 16);
+    fgets(path, 3, fp);
+    esp_config.ap_mac.address[4] = strtol(path, NULL, 16);
+    fgets(path, 3, fp); 
+    esp_config.ap_mac.address[5] = strtol(path, NULL, 16); 
+    pclose(fp);
 
     /////////// STATION BLOCK ///////////
     if ((p = get_uci_value("meshconfig.station.ssid")) == NULL)
@@ -243,7 +267,7 @@ static int get_config_from_file(char *filename, esp_config_t * esp_config_ret)
 
 
     esp_config.sta_config.bssid_set = 0;
-
+    /*
     esp_config.sta_config.bssid[0] = 0;
     esp_config.sta_config.bssid[1] = 0; 
     esp_config.sta_config.bssid[2] = 0; 
@@ -256,7 +280,7 @@ static int get_config_from_file(char *filename, esp_config_t * esp_config_ret)
     esp_config.sta_mac.address[2] = 0x00; 
     esp_config.sta_mac.address[3] = 0x11; 
     esp_config.sta_mac.address[4] = 0x22; 
-    esp_config.sta_mac.address[5] = 0x33;
+    esp_config.sta_mac.address[5] = 0x33;*/
 
     if ((p = get_uci_value("meshconfig.station.enabled")) == NULL)
     {
@@ -291,12 +315,7 @@ static int get_config_from_file(char *filename, esp_config_t * esp_config_ret)
 
 
     /////////// CRYPTO BLOCK ///////////
-    if ((p = get_uci_value("meshconfig.crypto.keylen")) == NULL)
-    {
-        printf("Error at meshconfig.crypto.keylen\n");
-        return -EFAULT;
-    }
-    esp_config.mesh_key_len = atoi(p);
+    esp_config.mesh_key_len = 16;
     memset(esp_config.mesh_key, '\0', sizeof(esp_config.mesh_key));
 
 
@@ -324,7 +343,7 @@ int main(int argc, char **argv)
         printf("Couldn't initialize inotify\n");
         return inotifyFD;
     }
-    int inotifyWatch = inotify_add_watch(inotifyFD, ESP_CONFIG_FILE_PATH, IN_MODIFY); 
+    int inotifyWatch = inotify_add_watch(inotifyFD, ESP_CONFIG_FILE_PATH, IN_MODIFY | IN_CLOSE_WRITE); 
     if (inotifyWatch < 0)
     {
         printf("Couldn't add watch to %s\n", ESP_CONFIG_FILE_PATH);
@@ -398,6 +417,7 @@ int main(int argc, char **argv)
         ret = epoll_wait(epollFD, epollEvent, EPOLL_MAX_EVENTS, EPOLL_RUN_TIMEOUT);
 
         read(inotifyFD, &inotifyBuf, INOTIFY_MAX_BUF_SIZE);
+        inotifyWatch = inotify_add_watch(inotifyFD, ESP_CONFIG_FILE_PATH, IN_MODIFY | IN_CLOSE_WRITE);
 
         ret = get_config_from_file(ESP_CONFIG_FILE_PATH, &new_espconfig);
         if(ret)
