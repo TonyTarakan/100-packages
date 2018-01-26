@@ -6,4 +6,4 @@
 	url = git@sdcroot:as100-meshmonitor
 [submodule "utils/as100esptool/src"]
 	path = utils/as100esptool/src
-	url = https://github.com/ilyakorostelev/esptool-ck
+	url = https://github.com/ilyakorostelev/esptool-ck.git
