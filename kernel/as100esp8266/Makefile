@@ -14,7 +14,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/as100esp8266
   SUBMENU:=Other modules
-  TITLE:=ESP8266 spi device support on AS100GW
+  TITLE:=ESP8266 spi device support on AS100GW/RTU325R
   DEPENDS:=
   FILES:=$(PKG_BUILD_DIR)/as100esp8266.ko
 endef

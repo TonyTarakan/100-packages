@@ -15,7 +15,6 @@ static irqreturn_t esp_irq_handler(int irq, void * dev_id)
 }
 
 
-#ifdef RPI_BASE
 static const struct of_device_id esp_spi_dt_ids[] = {
 	{ .compatible = "spidev" },
 	{},
@@ -49,6 +48,7 @@ int esp_spi_drv_remove(struct spi_device *spi)
 	return 0;
 }
 
+#ifdef RPI_BASE
 static struct spi_driver esp_spi_driver = 
 {
 	.driver = 
@@ -331,9 +331,9 @@ int esp_net_init(void)
 	esp.ndops.ndo_stop 			= esp_net_close;
 	esp.ndops.ndo_start_xmit 	= esp_net_start_tx;
 
-#ifdef SW_BASE
-	wifi_dev = alloc_netdev(sizeof(esp_net_priv_t), "espwifi%d", esp_net_setup);
-#elif defined RPI_BASE
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)
+	wifi_dev = alloc_netdev(sizeof(esp_net_priv_t), "espwifi%d", esp_net_setup); // for kernel 3.14 !!!fix
+#else
 	wifi_dev = alloc_netdev(sizeof(esp_net_priv_t), "espwifi%d", 0, esp_net_setup); // 4 args for kernel >=3.17
 #endif
 
@@ -348,9 +348,9 @@ int esp_net_init(void)
 		return res; 
 	}
 
-#ifdef SW_BASE
-	mesh_dev = alloc_netdev(sizeof(esp_net_priv_t), "espmesh%d", esp_net_mesh_setup);
-#elif defined RPI_BASE
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)
+	mesh_dev = alloc_netdev(sizeof(esp_net_priv_t), "espmesh%d", esp_net_mesh_setup); // for kernel 3.14 !!!fix
+#else
 	mesh_dev = alloc_netdev(sizeof(esp_net_priv_t), "espmesh%d", 0, esp_net_mesh_setup); // 4 args for kernel >=3.17
 #endif
 
@@ -445,14 +445,14 @@ static ssize_t on_esp_cmd_received(struct file * file, const char __user * buf, 
 	if(cmd_buf == NULL)
 		return -ENOMEM;
 
-	ret = copy_from_user(cmd_buf, (const void __user * )buf, (unsigned long)len);
+	ret = copy_from_user(cmd_buf, buf, len);
 	if(ret != 0)
 	{
 		kfree(cmd_buf);
 		return -ENOMEM;
 	}
 
-	if(memcmp(cmd_buf, ESP_CMD_ON, len) == 0)
+	if(memcmp(buf, ESP_CMD_ON, len) == 0)
 	{
 		ret = esp_on(ESP_BOOT_FLASH);
 		if(ret != 0)
@@ -460,7 +460,7 @@ static ssize_t on_esp_cmd_received(struct file * file, const char __user * buf, 
 		else
 			pr_info("ESP ON\n");
 	}
-	else if(memcmp(cmd_buf, ESP_CMD_OFF, len) == 0)
+	else if(memcmp(buf, ESP_CMD_OFF, len) == 0)
 	{
 		ret = esp_off();
 		if(ret != 0)
@@ -468,7 +468,7 @@ static ssize_t on_esp_cmd_received(struct file * file, const char __user * buf, 
 		else
 			pr_info("ESP OFF\n");
 	}
-	else if(memcmp(cmd_buf, ESP_CMD_RESET, len) == 0)
+	else if(memcmp(buf, ESP_CMD_RESET, len) == 0)
 	{
 		ret = esp_off();
 		if(ret != 0)
@@ -482,7 +482,7 @@ static ssize_t on_esp_cmd_received(struct file * file, const char __user * buf, 
 				pr_info("ESP RESET\n");
 		}
 	}
-	else if(memcmp(cmd_buf, ESP_CMD_PROG, len) == 0)
+	else if(memcmp(buf, ESP_CMD_PROG, len) == 0)
 	{
 		ret = esp_off();
 		if(ret != 0)
@@ -506,7 +506,7 @@ static ssize_t on_esp_cmd_received(struct file * file, const char __user * buf, 
 }
 
 
-static ssize_t on_esp_ipinfo_read(struct file * file, const char __user * buf, size_t len, loff_t * ppos)
+static ssize_t on_esp_ipinfo_read(struct file * file, char __user * buf, size_t len, loff_t * ppos)
 {
 	int count = esp.ip_info_nodes_count;
 
@@ -516,7 +516,7 @@ static ssize_t on_esp_ipinfo_read(struct file * file, const char __user * buf, s
 }
 
 
-static ssize_t on_esp_config_read(struct file * file, const char __user * buf, size_t len, loff_t * ppos)
+static ssize_t on_esp_config_read(struct file * file, char __user * buf, size_t len, loff_t * ppos)
 {
 	int res;
 
@@ -549,7 +549,7 @@ static ssize_t on_esp_config_write(struct file * file, const char __user * buf, 
 	if(write_buf == NULL)
 	 	return -ENOMEM;
 
-	ret = copy_from_user((void *)write_buf, (const void __user * )buf, (unsigned long)len);
+	ret = copy_from_user(write_buf, buf, (unsigned long)len);
 	if(ret)
 	{
 		kfree(write_buf);
@@ -760,10 +760,8 @@ static int esp_config_init(void)
 }
 
 
-
 static int esp_spi_init(void)
 {
-#ifdef SW_BASE
 	esp.chip.max_speed_hz	= ESP_SPI_MAX_SPEED;
 	esp.chip.bus_num 		= ESP_SPI_BUS_NUM;
 	esp.chip.chip_select 	= ESP_SPI_DEV_NUM;
@@ -787,24 +785,7 @@ static int esp_spi_init(void)
 	spi_setup(esp.spi_dev);
 
 	return 0;
-
-#elif defined RPI_BASE
-
-	int ret = 0;
-
-	pr_info("esp_spi_init ... \n");
-	ret = spi_register_driver(&esp_spi_driver);
-    if (ret < 0)
-    {
-        pr_alert("Cant register spi dev\n");
-        return ret;
-    }
-    pr_info("spi_register_driver OK \n");
-
-	return 0;
-#endif
 }
-
 
 
 
@@ -928,10 +909,10 @@ static int esp_init(void)
 
 static void esp_deinit(void)
 {
-	#ifdef SW_BASE
-	if(esp.spi_dev != NULL) spi_unregister_device(esp.spi_dev);
-	#elif defined RPI_BASE
+	#ifdef RPI_BASE
 	if(esp.spi_dev != NULL) spi_unregister_driver(&esp_spi_driver);
+	#else
+	if(esp.spi_dev != NULL) spi_unregister_device(esp.spi_dev);
 	#endif
 
 	if(esp.ctrl_dev.this_device != NULL) 
@@ -991,9 +972,8 @@ static void __exit esp_module_exit(void)
 
 MODULE_LICENSE("GPL");
 
-#ifdef RPI_BASE
 MODULE_ALIAS("spi:spidev");
-#endif
+
 
 module_init(esp_module_init);
 module_exit(esp_module_exit);

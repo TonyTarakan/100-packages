@@ -19,6 +19,7 @@
 #include <linux/socket.h>
 #include <linux/timer.h>
 #include <linux/wait.h>
+#include <linux/version.h>
 
 #include <linux/etherdevice.h>
 
@@ -40,14 +41,25 @@
 #define ESP_PROG_GPIO		SWIMCU_GPIO_TO_SYS(4)	// ESP_GPIO_0  GPIO38
 #define ESP_READY_GPIO		78						// ESP_GPIO_5  GPIO33
 #define ESP_HAS_DATA_GPIO	30						// ESP_GPIO_4  GPIO32
+#define ESP_SPI_BUS_NUM		0
+
 #elif defined RPI_BASE
 #define ESP_PWR_GPIO		17	// ESP_GPIO_ON	// RASPBERRY_PI_3 GPIO17(11)
 #define ESP_PROG_GPIO		27	// ESP_GPIO_0	// RASPBERRY_PI_3 GPIO27(13)
 #define ESP_READY_GPIO		3	// ESP_GPIO_5	// RASPBERRY_PI_3 GPIO03(03)
 #define ESP_HAS_DATA_GPIO	2	// ESP_GPIO_4	// RASPBERRY_PI_3 GPIO02(05)
+#define ESP_SPI_BUS_NUM		0
+
+#elif defined IMX6EVK_BASE
+#define ESP_PWR_GPIO		128
+#define ESP_PROG_GPIO		18	
+#define ESP_READY_GPIO		130	
+#define ESP_HAS_DATA_GPIO	129
+#define ESP_SPI_BUS_NUM		1
+
 #endif
 
-#define ESP_SPI_BUS_NUM		0
+
 #define ESP_SPI_DEV_NUM		0
 #define ESP_SPI_MAX_SPEED	4800000
 
@@ -78,10 +90,16 @@
 #define ESP_BOOT_FLASH		0
 #define ESP_BOOT_UART		1
 #elif defined RPI_BASE
-#define ESP_UART_DEV		"/dev/ttyS0"	// RASPBERRY_PI_3 CONSOLE NEED TO BE SWITCHED OFF
+#define ESP_UART_DEV		"/dev/ttyAMA0"	// RASPBERRY_PI_3 CONSOLE NEED TO BE SWITCHED OFF
 
 #define ESP_BOOT_FLASH		1
 #define ESP_BOOT_UART		0
+
+#else
+#define ESP_UART_DEV		"/dev/ttymxc2"
+#define ESP_BOOT_FLASH		0
+#define ESP_BOOT_UART		1
+
 #endif
 
 #define ESP_MAX_MESH_NODES	512
