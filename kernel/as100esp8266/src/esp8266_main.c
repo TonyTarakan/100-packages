@@ -16,7 +16,7 @@ static irqreturn_t esp_irq_handler(int irq, void * dev_id)
 
 
 static const struct of_device_id esp_spi_dt_ids[] = {
-	{ .compatible = "spidev" },
+	{ .compatible = "esp8266" },
 	{},
 };
 MODULE_DEVICE_TABLE(of, esp_spi_dt_ids);

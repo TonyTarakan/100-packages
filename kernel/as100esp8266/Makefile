@@ -17,6 +17,7 @@ define KernelPackage/as100esp8266
   TITLE:=ESP8266 spi device support on AS100GW/RTU325R
   DEPENDS:=
   FILES:=$(PKG_BUILD_DIR)/as100esp8266.ko
+  AUTOLOAD:=$(call AutoLoad,30,esp8266)
 endef
 
 define KernelPackage/as100esp8266/description
