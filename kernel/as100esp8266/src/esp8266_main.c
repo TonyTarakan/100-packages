@@ -900,10 +900,6 @@ static int esp_init(void)
 		pr_alert("esp_net_init: %d\n", res);
 		return res;
 	}
-
-	msleep(ESP_RST_WAIT_MS*2);
-	esp_on(ESP_BOOT_FLASH);
-
 	return 0;
 }
 
