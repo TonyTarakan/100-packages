@@ -91,7 +91,7 @@ typedef struct {
 	ip_addr_t gw;
 }ip_info_t;
 
-#pragma pack(push, 1)
+
 typedef struct {
 	uint32_t crc32;
 	ip_info_t ip_info;
@@ -104,4 +104,3 @@ typedef struct {
 	uint32_t mesh_key_len;
 	uint8_t mesh_key[MESH_KEY_MAX_LEN];
 } esp_config_t;
-#pragma pack(pop)
