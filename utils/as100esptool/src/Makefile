@@ -77,7 +77,7 @@ dist: $(TARGET) $(DIST_DIR)
 
 $(TARGET): $(OBJECTS)
 	$(CC) $^ -o $@ $(LDFLAGS)
-	strip $(TARGET)
+	#strip $(TARGET)
 
 $(BUILD_DIR):
 	@mkdir -p $@
